@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Settings</h2>
+
+{% if message %}
+<article>{{ message }}</article>
+{% endif %}
+
+<section>
+  <h3>Export</h3>
+  <p>Download all groups and notes as one CSV file.</p>
+  <a role="button" href="{{ url_for('settings.export_csv') }}">Export to CSV</a>
+</section>
+
+<section style="margin-top:2rem;">
+  <h3>Import</h3>
+  <p>
+    Upload a CSV file previously exported from this app. Groups are matched by
+    name and reused if they already exist; notes are always added, so
+    importing the same file twice will duplicate notes.
+  </p>
+  <form method="post" action="{{ url_for('settings.import_csv') }}" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv" required>
+    <button type="submit">Import CSV</button>
+  </form>
+</section>
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('pages.index') }}">&larr; Back</a></p>
+
+<section style="margin-top:2.5rem; border:1px solid var(--pico-del-color); border-radius:6px; padding:1rem;">
+  <h3>Remove All Data</h3>
+  <p><small>Permanently deletes every note and group. This cannot be undone.</small></p>
+  <form method="post" action="{{ url_for('settings.delete_all_data') }}"
+        onsubmit="return confirm('This will permanently delete ALL data. Continue?');">
+    <label>Type "confirm" below to proceed
+      <input type="text" name="confirm" placeholder="confirm" autocomplete="off" required>
+    </label>
+    <button type="submit" class="contrast">Remove All Data</button>
+  </form>
+</section>
+{% endblock %}

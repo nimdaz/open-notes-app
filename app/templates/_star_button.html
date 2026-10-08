@@ -1,0 +1,4 @@
+<button type="button" class="star-btn {{ 'on' if note.starred }}"
+        hx-post="{{ url_for('notes.note_toggle_star', note_id=note.id) }}" hx-swap="outerHTML"
+        aria-pressed="{{ 'true' if note.starred else 'false' }}"
+        aria-label="{{ 'Unstar' if note.starred else 'Star' }}" title="{{ 'Unstar' if note.starred else 'Star' }}">{{ '&#9733;'|safe if note.starred else '&#9734;'|safe }}</button>

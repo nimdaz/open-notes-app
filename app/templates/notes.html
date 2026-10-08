@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="top-bar">
+  <h2>Notes</h2>
+</div>
+
+{% set show_search = true %}{% set group_key = none %}
+{% include '_note_filter.html' %}
+{% include '_note_list.html' %}
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('pages.index') }}">&larr; Back</a></p>
+
+<a href="{{ url_for('notes.note_new_page') }}" class="fab" aria-label="Add note">
+  <span class="fab-icon">&#128221;</span>
+  <span>+ Note</span>
+</a>
+{% endblock %}

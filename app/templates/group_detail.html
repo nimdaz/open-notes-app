@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="top-bar">
+  <h2>{{ group.name if group else 'Unsorted' }}</h2>
+  {% if group %}
+  <a href="{{ url_for('groups.group_edit_page', group_id=group.id) }}" role="button" class="secondary icon-btn" aria-label="Edit">&#9998;</a>
+  {% endif %}
+</div>
+
+{% if group and group.description %}
+<p><small>{{ group.description }}</small></p>
+{% endif %}
+
+{% set show_search = false %}{% set group_key = group.id if group else 'unsorted' %}
+{% include '_note_filter.html' %}
+{% include '_note_list.html' %}
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('groups.groups_list') }}">&larr; Back to groups</a></p>
+
+<a href="{{ url_for('notes.note_new_page', group=group.id if group else None) }}" class="fab" aria-label="Add note">
+  <span class="fab-icon">&#128221;</span>
+  <span>+ Note</span>
+</a>
+{% endblock %}

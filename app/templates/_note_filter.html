@@ -1,0 +1,17 @@
+{# Type toggles and (optionally) title search. htmx reloads #note-list from /notes/search. #}
+<form id="note-filter" onsubmit="return false;"
+      hx-get="{{ url_for('notes.note_search', group=group_key, starred=starred_only|default(none)) }}"
+      hx-trigger="keyup changed delay:200ms from:#note-search, change"
+      hx-target="#note-list" hx-swap="outerHTML" hx-sync="this:replace">
+  <div class="toggles">
+    {% for key, (icon, label) in note_types.items() %}
+    <label class="toggle" title="{{ label }}">
+      <input type="checkbox" name="t" value="{{ key }}" checked>
+      <span>{{ icon }} {{ label }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  {% if show_search %}
+  <input type="text" id="note-search" name="q" placeholder="Search notes..." autocomplete="off">
+  {% endif %}
+</form>

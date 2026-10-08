@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Add Note</h2>
+
+<form method="post" action="{{ url_for('notes.note_create') }}">
+  <fieldset>
+    <legend>Type</legend>
+    <div class="toggles">
+    {% for key, (icon, label) in note_types.items() %}
+      <label class="toggle">
+        <input type="radio" name="type" value="{{ key }}" {% if key == note_type %}checked{% endif %}>
+        <span>{{ icon }} {{ label }}</span>
+      </label>
+    {% endfor %}
+    </div>
+  </fieldset>
+
+  {% include '_note_fields.html' %}
+
+  <button type="submit">Save</button>
+  <a href="{{ url_for('notes.notes_list') }}" role="button" class="secondary">Cancel</a>
+</form>
+{% endblock %}

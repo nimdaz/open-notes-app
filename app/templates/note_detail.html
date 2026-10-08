@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{# Full-page note: no app header/footer, a floating action bar instead. #}
+{% block nav %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block head %}
+<style>
+  main.container { padding-top: .75rem; padding-bottom: 7rem; }
+  .note-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; margin-bottom: .75rem; }
+  .note-title { font-size: 1.15rem; margin: .35rem 0 0; overflow-wrap: anywhere; }
+  .note-body { min-height: calc(100vh - 11rem); min-height: calc(100dvh - 11rem); }
+  .note-empty { opacity: .55; }
+  #note-form { margin: 0; }
+  #note-form textarea {
+    width: 100%; margin: 0; resize: none; font-family: inherit;
+    min-height: calc(100vh - 11rem); min-height: calc(100dvh - 11rem);
+  }
+  .note-bar {
+    position: fixed; left: 50%; transform: translateX(-50%); z-index: 50;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .note-bar .round, .note-bar .pill {
+    margin: 0; width: auto; display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,.28); line-height: 1;
+  }
+  .note-bar .round {
+    width: 3rem; height: 3rem; padding: 0; border-radius: 50%; font-size: 1.25rem;
+    background: var(--pico-card-background-color); color: var(--pico-color);
+    border: 1px solid var(--pico-muted-border-color);
+  }
+  .note-bar .pill {
+    background: #f97316; color: #fff; border: 0; border-radius: 999px;
+    padding: .85rem 1.4rem; font-weight: 600; font-size: 1rem; white-space: nowrap;
+  }
+  .note-bar .pill:hover, .note-bar .pill:focus { background: #ea6a0c; color: #fff; }
+  dialog article { max-height: 90vh; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="note-head">
+  <h1 class="note-title">{{ note_types[note.type][0] }} <span id="note-title">{{ note.title }}</span></h1>
+  <button type="button" id="star-btn" class="star-btn {{ 'on' if note.starred }}"
+          data-url="{{ url_for('notes.note_toggle_star', note_id=note.id) }}"></button>
+</div>
+
+<section id="note-view" class="note-body">
+  {% if note.type == 'checklist' %}
+  <ul class="checks">
+    {% for done, text in items %}
+    <li><label>
+      <input type="checkbox" {% if done %}checked{% endif %}
+             hx-post="{{ url_for('notes.note_toggle_item', note_id=note.id, item_index=loop.index0) }}"
+             hx-trigger="change" hx-swap="none">
+      <span>{{ text }}</span>
+    </label></li>
+    {% endfor %}
+  </ul>
+  {% if not items %}<p class="note-empty">Empty checklist. Tap anywhere to add items.</p>{% endif %}
+  {% elif note.content %}
+  <pre class="plain-text">{{ note.content }}</pre>
+  {% else %}
+  <p class="note-empty">Empty note. Tap anywhere to start writing.</p>
+  {% endif %}
+</section>
+
+<form id="note-form" method="post" action="{{ url_for('notes.note_update', note_id=note.id) }}" hidden>
+  <textarea name="content" aria-label="Note content"
+            placeholder="{{ 'One item per line' if note.type == 'checklist' else 'Write something...' }}">{{ edit_content }}</textarea>
+</form>
+
+<div class="note-bar">
+  <button type="button" id="mode-btn" class="round" aria-label="Edit" title="Edit">&#9998;</button>
+  <button type="button" id="details-btn" class="pill">Note details</button>
+  <a href="{{ back_url }}" id="back-btn" class="round" aria-label="Back" title="Back">&#10005;</a>
+</div>
+
+<dialog id="details-dialog">
+  <article>
+    <header>
+      <button type="button" id="details-close" aria-label="Close" rel="prev"></button>
+      <h3 style="margin:0;">Note details</h3>
+    </header>
+    <p class="meta"><small>
+      Type: {{ note_types[note.type][0] }} {{ note_types[note.type][1] }}<br>
+      Created {{ note.createdon|dt }}<br>
+      Modified <span id="meta-modified">{{ note.modifiedon|dt }}</span>
+    </small></p>
+
+    <form id="details-form" method="post" action="{{ url_for('notes.note_update_details', note_id=note.id) }}">
+      <label>Title
+        <input type="text" name="title" value="{{ note.title }}" required autocomplete="off">
+      </label>
+      <label>Group
+        <select name="group_id">
+          <option value="">Unsorted</option>
+          {% for group in groups %}
+          <option value="{{ group.id }}" {% if group.id == selected_group %}selected{% endif %}>{{ group.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <input type="checkbox" name="starred" role="switch" {% if note.starred %}checked{% endif %}>
+        &#9733; Starred
+      </label>
+      <label>Description
+        <textarea name="description" rows="3" placeholder="Optional description...">{{ note.description or '' }}</textarea>
+      </label>
+      <button type="submit">Save</button>
+      <button type="button" id="details-cancel" class="secondary">Cancel</button>
+    </form>
+
+    <form method="post" action="{{ url_for('notes.note_delete', note_id=note.id) }}"
+          onsubmit="return confirm('Delete this note?');" style="margin-top:1rem;">
+      <button type="submit" class="contrast">Delete Note</button>
+    </form>
+  </article>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // The note opens read-only. Tapping empty space or the pencil switches to edit mode;
+  // the save icon saves and switches back. Edits are saved when leaving edit mode, going back, opening
+  // the details, or when the window becomes inactive.
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var form = $("note-form"), view = $("note-view"), textarea = form.elements.content;
+    var modeBtn = $("mode-btn"), backBtn = $("back-btn");
+    var dialog = $("details-dialog"), detailsForm = $("details-form");
+    var editing = false, dirty = false, changedSinceLoad = false;
+
+    function setModified(text) { if (text) $("meta-modified").textContent = text; }
+
+    function setEditing(on) {
+      editing = on;
+      view.hidden = on;
+      form.hidden = !on;
+      modeBtn.textContent = on ? "\u{1F4BE}" : "\u270E";
+      modeBtn.title = on ? "Save" : "Edit";
+      modeBtn.setAttribute("aria-label", modeBtn.title);
+      if (on) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }
+
+    // Resolves to true when everything is saved (or nothing needed saving).
+    function saveContent() {
+      if (!dirty) return Promise.resolve(true);
+      return fetch(form.action, {
+        method: "POST", body: new FormData(form), keepalive: true, headers: { "X-Fetch": "1" }
+      }).then(function (response) {
+        if (!response.ok) throw new Error("save failed");
+        return response.json();
+      }).then(function (data) {
+        dirty = false; changedSinceLoad = true;
+        setModified(data.modified);
+        showToast("Saved \u2713");
+        return true;
+      }).catch(function () { showToast("Save failed"); return false; });
+    }
+
+    // --- star (title button and the switch in the details panel stay in sync)
+    var starBtn = $("star-btn"), starSwitch = detailsForm.elements.starred;
+    function setStar(on) {
+      starBtn.classList.toggle("on", on);
+      starBtn.textContent = on ? "\u2605" : "\u2606";
+      starBtn.title = on ? "Unstar" : "Star";
+      starBtn.setAttribute("aria-label", starBtn.title);
+      starBtn.setAttribute("aria-pressed", on);
+      starSwitch.checked = starSwitch.defaultChecked = on;
+    }
+    setStar(starSwitch.checked);
+    starBtn.addEventListener("click", function () {
+      fetch(starBtn.dataset.url, { method: "POST", headers: { "X-Fetch": "1" } }).then(function (response) {
+        if (!response.ok) throw new Error("star failed");
+        return response.json();
+      }).then(function (data) {
+        setStar(data.starred);
+        showToast(data.starred ? "Starred \u2605" : "Unstarred");
+      }).catch(function () { showToast("Save failed"); });
+    });
+
+    // --- edit / view
+    modeBtn.addEventListener("click", function () {
+      if (!editing) { setEditing(true); return; }
+      saveContent().then(function (ok) {
+        if (!ok) return;
+        if (changedSinceLoad) location.reload(); else setEditing(false);  // reload = fresh view
+      });
+    });
+    textarea.addEventListener("input", function () { dirty = true; });
+
+    // Tap anywhere (except checklist items and controls) to edit; ignore text selections.
+    document.addEventListener("click", function (event) {
+      if (editing || dialog.open) return;
+      if (event.target.closest(".note-bar, dialog, a, button, label, input, select, textarea")) return;
+      if (String(window.getSelection()).length) return;
+      setEditing(true);
+    });
+
+    // Auto-save when the window/tab becomes inactive.
+    function autosave() { if (editing) saveContent(); }
+    document.addEventListener("visibilitychange", function () { if (document.hidden) autosave(); });
+    window.addEventListener("blur", autosave);
+    window.addEventListener("pagehide", autosave);
+
+    // Checklist toggles also change the modified time.
+    document.body.addEventListener("saved", function (event) {
+      if (event.detail && event.detail.modified) setModified(event.detail.modified);
+    });
+
+    // --- back: previous page, regardless of mode
+    backBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      saveContent().then(function (ok) {
+        if (!ok) return;
+        var ref = document.referrer;
+        var fromSite = ref.indexOf(location.origin + "/") === 0;
+        var justCreated = ref.indexOf("/notes/new") !== -1;
+        if (fromSite && !justCreated && history.length > 1) history.back();
+        else location.href = backBtn.href;
+      });
+    });
+
+    // --- note details panel
+    function closeDialog() { dialog.close(); }
+    dialog.addEventListener("close", function () {
+      document.documentElement.classList.remove("modal-is-open");
+      detailsForm.reset();
+    });
+    $("details-btn").addEventListener("click", function () {
+      saveContent().then(function (ok) {
+        if (!ok) return;
+        document.documentElement.classList.add("modal-is-open");
+        dialog.showModal();
+      });
+    });
+    $("details-close").addEventListener("click", closeDialog);
+    $("details-cancel").addEventListener("click", closeDialog);
+
+    detailsForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      fetch(detailsForm.action, {
+        method: "POST", body: new FormData(detailsForm), headers: { "X-Fetch": "1" }
+      }).then(function (response) {
+        if (!response.ok) throw new Error("save failed");
+        return response.json();
+      }).then(function (data) {
+        $("note-title").textContent = data.title;
+        document.title = data.title + " \u00b7 Open Notes App";
+        setModified(data.modified);
+        setStar(data.starred);
+        // make the saved values the new defaults so the closing reset keeps them
+        Array.prototype.forEach.call(detailsForm.elements, function (el) {
+          if (el.tagName === "SELECT") {
+            Array.prototype.forEach.call(el.options, function (o) { o.defaultSelected = o.selected; });
+          } else if (el.name) { el.defaultValue = el.value; }
+        });
+        closeDialog();
+        showToast("Saved \u2713");
+      }).catch(function () { showToast("Save failed"); });
+    });
+  })();
+</script>
+{% endblock %}

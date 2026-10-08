@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="top-bar">
+  <h2>Groups</h2>
+</div>
+
+<ul class="plain">
+  <li class="list-item">
+    <a href="{{ url_for('groups.group_unsorted') }}" style="flex:1;">
+      Unsorted <span class="unit-badge">{{ unsorted_count }}</span>
+    </a>
+  </li>
+{% for group in groups %}
+  <li class="list-item">
+    <a href="{{ url_for('groups.group_detail', group_id=group.id) }}" style="flex:1;">
+      {{ group.name }} <span class="unit-badge">{{ group.notes|length }}</span>
+      {% if group.description %}<br><small class="meta">{{ group.description|truncate(60) }}</small>{% endif %}
+    </a>
+    <a href="{{ url_for('groups.group_edit_page', group_id=group.id) }}"
+       role="button" class="icon-btn secondary" aria-label="Edit">&#9998;</a>
+  </li>
+{% endfor %}
+</ul>
+
+<form class="add-form" method="get" action="{{ url_for('groups.group_new_page') }}">
+  <input type="text" name="name" placeholder="New group name" required autocomplete="off" style="flex:1;">
+  <button type="submit">Create</button>
+</form>
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('pages.index') }}">&larr; Back</a></p>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Starred · Open Notes App{% endblock %}
+{% block content %}
+<div class="top-bar">
+  <h2>Starred</h2>
+</div>
+
+{% set show_search = true %}{% set group_key = none %}{% set starred_only = 1 %}
+{% include '_note_filter.html' %}
+{% include '_note_list.html' %}
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('pages.index') }}">&larr; Back</a></p>
+{% endblock %}

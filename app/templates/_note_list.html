@@ -1,0 +1,13 @@
+<ul id="note-list" class="plain">
+{% for note in notes %}
+<li class="list-item">
+  <a href="{{ url_for('notes.note_detail', note_id=note.id) }}" style="flex:1;">
+    {{ note_types[note.type][0] }} {{ note.title }}
+    <br><small class="meta">{{ note.group.name if note.group else 'Unsorted' }} · {{ note.modifiedon|dt }}</small>
+  </a>
+  {% include '_star_button.html' %}
+</li>
+{% else %}
+<li><small>No notes found.</small></li>
+{% endfor %}
+</ul>

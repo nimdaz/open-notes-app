@@ -1,0 +1,9 @@
+services:
+  open-notes-app:
+    build: .
+    # Or, once published: image: ghcr.io/nimdaz/open-notes-app:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/code/data
+    restart: unless-stopped

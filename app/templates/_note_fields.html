@@ -1,0 +1,20 @@
+<label>Title
+  <input type="text" name="title" value="{{ note.title if note else title }}" required autocomplete="off">
+</label>
+
+<label>Group
+  <select name="group_id">
+    <option value="">Unsorted</option>
+    {% for group in groups %}
+    <option value="{{ group.id }}" {% if group.id == selected_group %}selected{% endif %}>{{ group.name }}</option>
+    {% endfor %}
+  </select>
+</label>
+
+<label>Description
+  <textarea name="description" rows="2" placeholder="Optional description...">{{ note.description if note and note.description else '' }}</textarea>
+</label>
+
+<label>Content <small>(checklists: one item per line)</small>
+  <textarea name="content" rows="12">{{ edit_content }}</textarea>
+</label>

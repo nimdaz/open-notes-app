@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Open Notes App{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/pico.min.css">
+<script src="/static/js/htmx.min.js"></script>
+<style>
+  main.container { padding-bottom: 5rem; }
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+  }
+  .list-item a { text-decoration: none; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; } 
+  .top-bar a[role="button"] { margin: 0; }
+  ul.plain { list-style: none; padding: 0; margin: 0; }
+  form.inline-row { display: flex; gap: .5rem; flex: 1; align-items: center; }
+  form.inline-row button { width: auto; margin: 0; white-space: nowrap; }
+  .add-form { display: flex; gap: .5rem; margin-top: 1rem; }
+  .add-form button { width: auto; margin: 0; }
+  .icon-btn {
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn.round { border-radius: 20%; }
+  .fab {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    background: #f97316;
+    color: #fff;
+    padding: .8rem 1.5rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,.28);
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .fab:hover, .fab:focus { background: #ea6a0c; color: #fff; }
+  .fab .fab-icon { font-size: 1.2rem; line-height: 1; }
+  .unit-badge { font-size: .9rem; opacity: .7; }
+  .toggles { display: flex; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }
+  .toggle { position: relative; margin: 0; }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .toggle span {
+    display: inline-block; padding: .35rem .8rem; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--pico-muted-border-color); opacity: .55;
+  }
+  .toggle input:checked + span { opacity: 1; border-color: #f97316; background: rgba(249, 115, 22, 0.12); }
+  .toggle input:focus-visible + span { outline: 2px solid #f97316; }
+  .plain-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; background: none; padding: 0; margin: 0; }
+  ul.checks { list-style: none; padding: 0; margin: 0; }
+  ul.checks label { display: inline-flex; gap: .6rem; align-items: center; margin: 0; padding: .35rem 0; }
+  ul.checks input:checked ~ span { text-decoration: line-through; opacity: .6; }
+  .meta { opacity: .75; }
+  .star-btn {
+    flex: 0 0 auto; width: 2.25rem; height: 2.25rem; margin: 0; padding: 0;
+    background: none; border: 0; box-shadow: none; font-size: 1.5rem; line-height: 1;
+    color: var(--pico-muted-color); opacity: .6; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .star-btn.on { color: #3b82f6; opacity: 1; }
+  .star-btn:hover, .star-btn:active { background: none; box-shadow: none; opacity: 1; }
+  .star-btn:focus-visible { outline: 2px solid #3b82f6; }
+  #toast {
+    position: fixed; top: .5rem; left: 50%; transform: translate(-50%, -200%); z-index: 100;
+    background: #f97316; color: #fff; padding: .35rem 1rem; border-radius: 999px;
+    font-size: .9rem; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    transition: transform .2s; pointer-events: none;
+  }
+  #toast.show { transform: translate(-50%, 0); }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+<main class="container">
+{% block nav %}
+  <nav>
+    <ul><li><strong><a href="{{ url_for('pages.index') }}">📝 Open Notes App</a></strong></li></ul>
+    <ul><li>
+      <a href="{{ url_for('pages.about') }}" role="button" class="secondary icon-btn round" aria-label="About">&#8505;&#65039;</a>
+    </li></ul>
+  </nav>
+  {% endblock %}
+  {% block content %}{% endblock %}
+{% block footer %}
+  <footer style="text-align:center; margin-top:2rem;">
+    <small><a href="{{ url_for('pages.about') }}" class="secondary">Open Notes App v{{ app_version }}</a></small>
+  </footer>
+  {% endblock %}
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+  // Short, unobtrusive confirmation at the top of the screen.
+  var toastTimer;
+  function showToast(message) {
+    var toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove("show"); }, 1500);
+  }
+  // Coming back via the browser's back button: reload so lists show fresh data.
+  window.addEventListener("pageshow", function (event) { if (event.persisted) location.reload(); });
+  // Sent by the server (HX-Trigger header) after a checklist item is toggled.
+  document.body.addEventListener("saved", function () { showToast("Saved ✓"); });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

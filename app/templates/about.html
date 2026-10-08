@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>About</h2>
+
+<p>
+  Open Notes App is a small, mobile-first app for keeping plain text notes
+  and checklists, optionally sorted into groups. It runs entirely on your own server and stores
+  everything in a local SQLite database, with nothing sent anywhere else.
+</p>
+
+<p>
+  This project is open source under the
+  <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>,
+  meaning you're free to use, modify, and share it.
+</p>
+
+<p>
+  <a href="https://github.com/nimdaz/open-notes-app" target="_blank" rel="noopener"
+     style="display:inline-flex; align-items:center; gap:.4rem; text-decoration:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+               0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+               -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66
+               .07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15
+               -.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27
+               .68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+               .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+               0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+    View on GitHub
+  </a>
+</p>
+
+<p><small>Version {{ app_version }}</small></p>
+
+<hr>
+
+<p>
+  <small>
+    <strong>About this build:</strong> this app was built collaboratively with
+    Claude Sonnet 5.5 (Anthropic), used interactively through a free Claude.ai
+    account. Code was generated iteratively in response to specific, detailed
+    instructions, with each feature reviewed and manually tested along the
+    way. It's a case of AI-assisted development guided by a human throughout,
+    not autonomous or unsupervised generation &mdash; but as with any
+    AI-assisted code, it hasn't had a professional security review, so treat
+    it accordingly if you plan to expose it beyond your own network.
+  </small>
+</p>
+
+<p style="margin-top:1.5rem;"><a href="{{ url_for('pages.index') }}">&larr; Back</a></p>
+{% endblock %}
